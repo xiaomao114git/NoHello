@@ -1,0 +1,20 @@
+# Nohello Hide Rule System
+#
+# Each line = a directory to cover with an empty tmpfs in target apps'
+# mount namespaces, so anti-cheat probes of CHILD paths under it fail
+# (ENOENT). The directory itself still resolves.
+#
+# Default (built-in, always applied first):
+#   /sys/module   (kernel module enumeration — KernelSU / kp-next traces)
+#
+# Optional per-line SELinux context: "<path> context=<context>"
+#
+# ⚠️ Notes:
+#   - /dev/pts covering breaks openpty()/pts allocation in apps — do NOT add
+#     it unless the target app never allocates PTYs.
+#   - /sys/class/kgsl covering can break the game's own GPU monitoring
+#     (Unreal reads kgsl nodes for perf/thermal). Add only when spoofing a
+#     MediaTek donor (which has no kgsl) AND the game tolerates it.
+#
+# Uncomment to add more:
+# /sys/class/kgsl

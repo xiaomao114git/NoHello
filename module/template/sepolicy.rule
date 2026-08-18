@@ -1,0 +1,6 @@
+allow zygote adb_data_file dir search
+allow zygote adb_data_file file { read open getattr }
+# Hide Rule System: zygote (pre-specialize) mounts empty tmpfs over detection
+# surfaces inside the app's fresh mount namespace.
+allow zygote tmpfs filesystem mount
+allow zygote sysfs dir mounton

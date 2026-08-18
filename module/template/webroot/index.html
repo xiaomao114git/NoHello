@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NoHello 控制面板</title>
+<style>
+  :root {
+    --bg: #0f1115; --card: #1a1e26; --border: #2a2f3a;
+    --text: #e6e9ef; --muted: #8b93a3; --accent: #4c8dff;
+    --green: #3fb96a; --red: #e5484d; --amber: #f0a020;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Noto Sans SC", sans-serif;
+    padding: 16px; max-width: 720px; margin: 0 auto;
+  }
+  h1 { font-size: 20px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; margin-bottom: 14px;
+  }
+  .card h2 { font-size: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 600; }
+  .badge.on { background: rgba(63,185,106,.15); color: var(--green); }
+  .badge.off { background: rgba(229,72,77,.15); color: var(--red); }
+  .row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .row:last-child { border-bottom: none; }
+  .muted { color: var(--muted); }
+  .mono { font-family: "JetBrains Mono", "Noto Sans Mono CJK SC", monospace; font-size: 12px; }
+  textarea {
+    width: 100%; background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px; font-family: "JetBrains Mono", monospace; font-size: 12px;
+    min-height: 120px; resize: vertical; line-height: 1.6;
+  }
+  .btn {
+    background: var(--accent); color: #fff; border: none; border-radius: 8px;
+    padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
+    margin-top: 10px;
+  }
+  .btn:active { opacity: .8; }
+  .btn.ghost { background: var(--border); color: var(--text); }
+  .btn.danger { background: var(--red); }
+  .switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; inset: 0; background: var(--border);
+    border-radius: 99px; transition: .2s; cursor: pointer;
+  }
+  .slider::before {
+    content: ""; position: absolute; width: 18px; height: 18px;
+    left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s;
+  }
+  input:checked + .slider { background: var(--green); }
+  input:checked + .slider::before { transform: translateX(20px); }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: #2a2f3a; color: var(--text); padding: 10px 18px;
+    border-radius: 8px; font-size: 13px; opacity: 0; transition: .3s;
+    pointer-events: none; z-index: 99; max-width: 90vw;
+  }
+  .toast.show { opacity: 1; }
+  .kv { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; }
+  .kv .k { color: var(--muted); }
+  .tabbar { display: flex; gap: 8px; margin-bottom: 14px; }
+  .tab {
+    flex: 1; text-align: center; padding: 8px; border-radius: 8px;
+    background: var(--card); border: 1px solid var(--border);
+    font-size: 13px; color: var(--muted); cursor: pointer;
+  }
+  .tab.active { color: var(--accent); border-color: var(--accent); background: rgba(76,141,255,.08); }
+  .page { display: none; }
+  .page.active { display: block; }
+  .help { font-size: 12px; color: var(--muted); line-height: 1.7; margin-top: 8px; }
+  code { background: var(--bg); padding: 1px 5px; border-radius: 4px; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<h1>🕶 NoHello <span id="ver" class="badge off">…</span></h1>
+<div class="subtitle">Zygisk root 隐藏模块 · 控制面板</div>
+
+<div class="tabbar">
+  <div class="tab active" data-tab="props">📱 设备模拟</div>
+  <div class="tab" data-tab="hide">🛡 隐藏路径</div>
+  <div class="tab" data-tab="misc">⚙️ 规则/状态</div>
+</div>
+
+<!-- ========== 设备模拟 ========== -->
+<div class="page active" id="page-props">
+  <div class="card">
+    <h2>设备属性模拟 <span id="propsBadge" class="badge off">未知</span></h2>
+    <div class="row">
+      <span>属性服务通道 (resetprop)</span>
+      <label class="switch"><input type="checkbox" id="propsToggle"><span class="slider"></span></label>
+    </div>
+    <div class="help">
+      开启后 NoHello 会用 <code>props.conf</code> 里的属性覆盖系统属性服务
+      (<code>__system_property_get</code> / <code>getprop</code>)。全局生效，建议只对目标应用
+      所在场景使用。挂载通道 (build.prop bind-mount) 始终生效，无需此开关。
+    </div>
+  </div>
+  <div class="card">
+    <h2>props.conf <span class="badge off">编辑</span></h2>
+    <textarea id="propsEditor" spellcheck="false" placeholder="加载中..."></textarea>
+    <button class="btn" id="propsSave">💾 保存并应用</button>
+    <button class="btn ghost" id="propsRevert">↩ 恢复为出厂配置</button>
+    <div class="help">
+      每行 <code>key=value</code>。修改后保存会立即刷新 build.prop (挂载通道) 并在开启时
+      重放 resetprop (属性通道)。
+    </div>
+  </div>
+</div>
+
+<!-- ========== 隐藏路径 ========== -->
+<div class="page" id="page-hide">
+  <div class="card">
+    <h2>Hide Rule System <span class="badge off">mount tmpfs</span></h2>
+    <div class="help" style="margin-bottom:8px">
+      用空 tmpfs 覆盖目录，让反作弊对子路径的探测 (<code>/sys/module/module_00</code> 等) 全部
+      落空 (ENOENT)。内置默认: <code>/sys/module</code>、<code>/data/local/tmp</code>。
+    </div>
+    <textarea id="hideEditor" spellcheck="false" placeholder="加载中..."></textarea>
+    <button class="btn" id="hideSave">💾 保存</button>
+    <button class="btn ghost" id="hideRevert">↩ 恢复为出厂配置</button>
+  </div>
+</div>
+
+<!-- ========== 规则/状态 ========== -->
+<div class="page" id="page-misc">
+  <div class="card">
+    <h2>模块状态</h2>
+    <div class="kv"><span class="k">卸载计数</span><span id="statUnmounts" class="mono">-</span></div>
+    <div class="kv"><span class="k">白名单模式</span><span id="statWhitelist" class="mono">-</span></div>
+    <div class="kv"><span class="k">持久化评估</span><span id="statPersist" class="mono">-</span></div>
+    <div class="kv"><span class="k">属性模拟通道</span><span id="statProps" class="mono">-</span></div>
+  </div>
+  <div class="card">
+    <h2>umount 规则 <span class="badge off">Mount Rule System</span></h2>
+    <textarea id="umountEditor" spellcheck="false" placeholder="加载中..."></textarea>
+    <button class="btn" id="umountSave">💾 保存</button>
+  </div>
+  <div class="card">
+    <h2>开关</h2>
+    <div class="row">
+      <span>白名单模式 <span class="muted">(/data/adb/nohello/whitelist)</span></span>
+      <label class="switch"><input type="checkbox" id="whitelistToggle"><span class="slider"></span></label>
+    </div>
+    <div class="row">
+      <span>持久化评估 <span class="muted">(umount_persist)</span></span>
+      <label class="switch"><input type="checkbox" id="persistToggle"><span class="slider"></span></label>
+    </div>
+  </div>
+  <div class="card">
+    <h2>危险操作</h2>
+    <button class="btn danger" id="btnUninstall">🗑 卸载模块配置</button>
+    <div class="help">删除 <code>/data/adb/nohello</code> 配置目录 (模块本体需在管理器卸载)。</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { exec } from './kernelsu.js';
+
+const $ = id => document.getElementById(id);
+const NOHELLO_DIR = '/data/adb/nohello';
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+async function sh(cmd) {
+  const { errno, stdout, stderr } = await exec(cmd);
+  if (errno !== 0) throw new Error(`${cmd}\nstderr: ${stderr}`);
+  return stdout;
+}
+
+// Write a file safely: base64-encode the content so no shell metacharacters
+// (EOF lines, quotes, $, backticks) can ever break out of the command.
+async function writeFile(path, content) {
+  const b64 = btoa(unescape(encodeURIComponent(content)));
+  await sh(`echo '${b64}' | base64 -d > '${path}'`);
+}
+
+async function readFile(path) {
+  try {
+    return await sh(`cat ${path}`);
+  } catch { return ''; }
+}
+
+async function exists(path) {
+  const { errno } = await exec(`[ -e ${path} ]`);
+  return errno === 0;
+}
+
+// Apply one prop with shell-safe quoting via base64 on the value.
+async function applyProp(key, val) {
+  const b64 = btoa(unescape(encodeURIComponent(val)));
+  await sh(`resetprop '${key}' "$(echo '${b64}' | base64 -d)"`);
+}
+
+async function loadStatus() {
+  try {
+    // 模块描述 (含卸载计数)
+    const desc = await sh('cat /data/adb/modules/zygisk_nohello/description 2>/dev/null || true');
+    const m = desc.match(/(\d+) time/);
+    $('statUnmounts').textContent = m ? m[1] : '0';
+    $('ver').textContent = (desc.match(/Nohello unmounted/) ? '已生效' : '运行中');
+    $('ver').className = 'badge ' + (desc.match(/Nohello unmounted/) ? 'on' : 'off');
+
+    const [wl, persist, propsEn] = await Promise.all([
+      exists(`${NOHELLO_DIR}/whitelist`),
+      exists(`${NOHELLO_DIR}/umount_persist`),
+      exists(`${NOHELLO_DIR}/props_enabled`),
+    ]);
+    $('statWhitelist').textContent = wl ? 'ON' : 'OFF';
+    $('statPersist').textContent = persist ? 'ON' : 'OFF';
+    $('statProps').textContent = propsEn ? 'ON' : 'OFF';
+    $('whitelistToggle').checked = wl;
+    $('persistToggle').checked = persist;
+
+    // props 通道状态
+    $('propsToggle').checked = propsEn;
+    $('propsBadge').textContent = propsEn ? '已开启' : '已关闭';
+    $('propsBadge').className = 'badge ' + (propsEn ? 'on' : 'off');
+  } catch (e) {
+    toast('状态加载失败: ' + e.message);
+  }
+}
+
+async function loadEditors() {
+  $('propsEditor').value = await readFile(`${NOHELLO_DIR}/props.conf`);
+  $('hideEditor').value = await readFile(`${NOHELLO_DIR}/hide`);
+  $('umountEditor').value = await readFile(`${NOHELLO_DIR}/umount`);
+}
+
+// 保存配置: 写文件 (base64, 防注入) + 应用属性
+async function saveProps() {
+  const content = $('propsEditor').value;
+  await writeFile(`${NOHELLO_DIR}/props.conf`, content);
+  // 若属性通道开启则重放
+  if (await exists(`${NOHELLO_DIR}/props_enabled`)) {
+    const lines = content.split('\n').filter(l => l && !l.startsWith('#'));
+    for (const l of lines) {
+      const key = l.split('=')[0];
+      const val = l.slice(l.indexOf('=') + 1);
+      if (key) await applyProp(key, val);
+    }
+  }
+  toast('✅ props.conf 已保存并应用');
+}
+
+$('propsToggle').addEventListener('change', async e => {
+  const on = e.target.checked;
+  await sh(on ? `touch ${NOHELLO_DIR}/props_enabled` : `rm -f ${NOHELLO_DIR}/props_enabled`);
+  if (on) {
+    // 应用所有属性
+    const content = $('propsEditor').value;
+    for (const l of content.split('\n')) {
+      if (!l || l.startsWith('#')) continue;
+      const key = l.split('=')[0], val = l.slice(l.indexOf('=') + 1);
+      if (key) await applyProp(key, val);
+    }
+  } else {
+    // 已应用的 resetprop 不会自动回滚 (需重启); 提示用户
+    toast('⚠️ 属性通道已关闭 — 已应用的属性重启后恢复');
+    return;
+  }
+  $('propsBadge').textContent = on ? '已开启' : '已关闭';
+  $('propsBadge').className = 'badge ' + (on ? 'on' : 'off');
+  toast('✅ 属性通道已开启并应用');
+});
+
+$('propsSave').addEventListener('click', saveProps);
+$('propsRevert').addEventListener('click', async () => {
+  $('propsEditor').value = await readFile('/data/adb/modules/zygisk_nohello/props.conf');
+  await saveProps();
+});
+
+$('hideSave').addEventListener('click', async () => {
+  await writeFile(`${NOHELLO_DIR}/hide`, $('hideEditor').value);
+  toast('✅ hide 规则已保存');
+});
+$('hideRevert').addEventListener('click', async () => {
+  $('hideEditor').value = await readFile('/data/adb/modules/zygisk_nohello/hide');
+});
+
+$('umountSave').addEventListener('click', async () => {
+  await writeFile(`${NOHELLO_DIR}/umount`, $('umountEditor').value);
+  toast('✅ umount 规则已保存');
+});
+
+$('whitelistToggle').addEventListener('change', async e => {
+  await sh(e.target.checked ? `touch ${NOHELLO_DIR}/whitelist` : `rm -f ${NOHELLO_DIR}/whitelist`);
+  toast(e.target.checked ? '✅ 白名单模式已开启' : '白名单模式已关闭');
+});
+$('persistToggle').addEventListener('change', async e => {
+  await sh(e.target.checked ? `touch ${NOHELLO_DIR}/umount_persist` : `rm -f ${NOHELLO_DIR}/umount_persist`);
+  toast(e.target.checked ? '✅ 持久化评估已开启' : '持久化评估已关闭');
+});
+
+$('btnUninstall').addEventListener('click', async () => {
+  if (!confirm('确定删除 /data/adb/nohello 全部配置？')) return;
+  await sh(`rm -rf ${NOHELLO_DIR}`);
+  toast('🗑 配置已删除');
+  location.reload();
+});
+
+// Tab 切换
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    $('page-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+loadStatus();
+loadEditors();
+</script>
+</body>
+</html>
