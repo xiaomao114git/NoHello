@@ -62,7 +62,8 @@ extract "$ZIPFILE" 'cleanup.sh'      "$MODPATH"
 echo $DESCRIPTION > $MODPATH/description
 mv "$TMPDIR/sepolicy.rule" "$MODPATH"
 
-HAS32BIT=false && ([ $(getprop ro.product.cpu.abilist32) ] || [ $(getprop ro.system.product.cpu.abilist32) ]) && HAS32BIT=true
+HAS32BIT=false
+[ -n "$(getprop ro.product.cpu.abilist32)" ] || [ -n "$(getprop ro.system.product.cpu.abilist32)" ] && HAS32BIT=true
 
 if [ ! -d "$CONFIG_DIR" ]; then
   ui_print "- Creating configuration directory"

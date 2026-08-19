@@ -129,6 +129,8 @@ public:
 		if (it == parts.end() || std::distance(parts.begin(), it) < 6)
 			return;
 		size_t sep_idx = std::distance(parts.begin(), it);
+		if (sep_idx + 3 >= parts.size())
+			return;
 		mnt_id = std::stoi(parts[0]);
 		mnt_parent_id = std::stoi(parts[1]);
 		parseMajorMinor(parts[2]);

@@ -184,18 +184,17 @@ static std::unique_ptr<std::string> getExternalErrorBehaviour(const MountInfo& m
 		return nullptr;
 	errors = le16toh(errors);
 	switch (errors)
-	{
-		case 1:
-			return std::make_unique<std::string>("continue");
-		case 2:
-			return std::make_unique<std::string>("remount-ro");
-		case 3:
-			return std::make_unique<std::string>("panic");
-		default:
-			return nullptr;
+		{
+			case 1:
+				return std::make_unique<std::string>("continue");
+			case 2:
+				return std::make_unique<std::string>("remount-ro");
+			case 3:
+				return std::make_unique<std::string>("panic");
+			default:
+				return nullptr;
+		}
 	}
-	return nullptr;
-}
 
 static void doumount(const std::string& mntPnt);
 
@@ -757,6 +756,11 @@ static void NoRoot(int fd) {
 			return SUCCESS;
 		}
 	);
+
+	if (result < 0) {
+		LOGE("#[ps::Companion] forkcall failed (fork or child killed by signal): %s", strerror(errno));
+		result = FAILURE;
+	}
 
 	if (result == SUCCESS) {
 		successRate++;
