@@ -21,6 +21,19 @@ until [ "$(getprop sys.boot_completed)" = "1" ]; do
   sleep 2
 done
 
+# Wait for vold to finish establishing the FUSE mount for internal storage
+# before modifying ro.* properties. On Android 16 / ColorOS 16, resetprop
+# can interfere with vold's FUSE daemon init, causing
+# "Failed to start FUSE" and /sdcard to become inaccessible.
+FUSE_WAIT=0
+until [ -d /storage/emulated/0 ] || [ $FUSE_WAIT -ge 30 ]; do
+  sleep 1
+  FUSE_WAIT=$((FUSE_WAIT + 1))
+done
+if [ $FUSE_WAIT -lt 30 ]; then
+  sleep 3
+fi
+
 check_reset_prop "ro.boot.vbmeta.device_state" "locked"
 check_reset_prop "ro.boot.verifiedbootstate" "green"
 check_reset_prop "ro.boot.flash.locked" "1"
