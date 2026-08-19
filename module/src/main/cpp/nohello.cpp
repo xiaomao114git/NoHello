@@ -47,7 +47,7 @@ static constexpr off_t EXT_MAGIC_OFFSET = 0x38;
 static constexpr off_t EXT_ERRORS_OFFSET = 0x3C;
 static constexpr uint16_t EXT_MAGIC = 0xEF53;
 static const std::vector<std::string> defaultRules = {
-		R"(source { "KSU", "APatch", "magisk", "worker" } fs { "tmpfs" "overlay" })"
+		R"(source { "KSU" "APatch" "magisk" "worker" } fs { "tmpfs" "overlay" })"
 };
 
 enum Advice {
@@ -386,7 +386,7 @@ static void mountHidePaths() {
         // Best-effort: try with the requested SELinux context first, then a
         // per-path safe context (see fallbackContextFor), never a bare tmpfs
         // whose label would make child probes EACCES instead of ENOENT.
-        unsigned long flags = MS_NOSUID | MS_NODEV | MS_NOEXEC;
+        unsigned long flags = MS_NOSUID | MS_NODEV | MS_NOEXEC | MS_PRIVATE;
         std::string fallback = fallbackContextFor(path);
         int res = -1;
         if (!ctx.empty())
