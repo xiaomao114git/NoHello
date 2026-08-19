@@ -20,41 +20,31 @@
   <a href="https://github.com/MhmRdd/NoHello/releases">Latest Release</a>
 </p>
 
-> [!CAUTION]
-> **⚠️ v0.0.8 已撤回 (2026-08-18) — 请勿安装 / 请立即卸载**
->
-> The v0.0.8 release (Hide Rule System / device spoofing / WebUI branch) was found to
-> **break the emulated-storage (sdcard) FUSE daemon** on at least one device: after
-> installing the module and rebooting, vold repeatedly fails to start the sdcard FUSE
-> daemon (`Failed to start FUSE`, exit 234) and `/sdcard` becomes inaccessible
-> (`Transport endpoint is not connected`). Underlying data in `/data/media/0` is **not**
-> lost, but the storage mount fails until the module is removed and the device rebooted.
->
-> The release and tag have been deleted. **Do not install v0.0.8.** If you already
-> installed it: remove the module (`rm -rf /data/adb/modules/zygisk_nohello
-> /data/adb/nohello /data/adb/post-fs-data.d/.nohello_cleanup.sh`) and reboot — storage
-> recovers fully, data intact.
->
-> Root cause is under investigation. The v0.0.7 upstream line remains unaffected.
->
-> ---
-> **v0.0.8 已撤回 (2026-08-18) — 请勿安装 / 请立即卸载**
->
-> v0.0.8 版本（Hide Rule System / 设备模拟 / WebUI 分支）被发现会在至少一台设备上
-> **破坏模拟存储 (sdcard) 的 FUSE 守护进程**：安装模块并重启后，vold 反复无法启动
-> sdcard FUSE daemon（`Failed to start FUSE`，exit 234），`/sdcard` 不可访问
-> （`Transport endpoint is not connected`）。底层数据在 `/data/media/0` 中**不会丢失**，
-> 但存储挂载会一直失败，直到移除模块并重启设备。
->
-> 该 release 与 tag 已删除。**请勿安装 v0.0.8。** 若已安装：移除模块
-> （`rm -rf /data/adb/modules/zygisk_nohello /data/adb/nohello
-> /data/adb/post-fs-data.d/.nohello_cleanup.sh`）并重启——存储会完全恢复，数据完好。
->
-> 根因调查中。上游 v0.0.7 不受影响。
-
 > [!NOTE]
 > This module currently focuses to hide root & zygisk from apps.
 > Updates will gradually implements changes and fixes.
+
+> [!TIP]
+> **v0.0.8 Issues Resolved (2026-08-19)**
+>
+> The critical FUSE/sdcard breakage and other bugs in v0.0.8 have been fixed:
+>
+> - **FUSE/sdcard breakage**: Mount rules were split across two lines with comma-separated
+>   sources, causing essential system partitions to be unmounted. Fixed by merging into a
+>   single rule with space-separated sources and scoped `point` restriction.
+> - **Boot hang**: `resetprop -w sys.boot_completed 0` caused init SIGABRT on Android 16.
+>   Replaced with a wait loop that blocks until `boot_completed=1`.
+> - **Null pointer crash**: `anomaly()` took ownership of `unique_ptr<FileDescriptorInfo>`,
+>   leaving the sanitize list with dangling pointers. Changed to raw pointer.
+> - **Silent failure on fork error**: `forkcall` returning -1 (fork failure or signal kill)
+>   was not handled, causing root hiding to silently fail. Now treated as FAILURE.
+> - **Out-of-bounds access**: `MountInfo` constructor accessed array indices without bounds
+>   checking after the `-` separator. Added bounds validation.
+> - **Mount propagation**: tmpfs mounts lacked `MS_PRIVATE` flag, causing propagation leaks.
+> - **Shell quoting**: Variables in `check_reset_prop` were unquoted; `cleanup.sh` sed used
+>   `/` delimiter (broken by slashes in description); `customize.sh` HAS32BIT used unquoted
+>   command substitution. All fixed.
+> - **Residual files**: `no_dirtyro_ar` marker was not cleaned on boot. Added cleanup.
 
 ## About The Project
 
