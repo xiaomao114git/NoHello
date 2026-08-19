@@ -74,9 +74,6 @@ static bool anomaly(MountRootResolver mrs, const MountInfo &mount) {
 		return true;
 	}
 	if (fs_type == "overlay") {
-		if (toumount_sources.count(mnt_src)) {
-			return true;
-		}
 		const auto& fm = mount.getMountOptions().flagmap;
 		if (fm.count("lowerdir") && fm.at("lowerdir").starts_with(adbPathPrefix)) {
 			return true;
@@ -85,10 +82,6 @@ static bool anomaly(MountRootResolver mrs, const MountInfo &mount) {
 			return true;
 		}
 		if (fm.count("workdir") && fm.at("workdir").starts_with(adbPathPrefix)) {
-			return true;
-		}
-	} else if (fs_type == "tmpfs") {
-		if (toumount_sources.count(mnt_src)) {
 			return true;
 		}
 	}
@@ -111,7 +104,6 @@ static bool anomaly(const MountRuleParser::MountRule& rule, MountRootResolver mr
 		}
 		return rule.matches(roots, mount.getMountPoint(), fsType, mount.getMountSource());
 	}
-	return false;
 }
 
 static bool anomaly(const std::vector<MountRuleParser::MountRule>& rules, MountRootResolver mrs, const MountInfo &mount) {
@@ -137,7 +129,7 @@ static bool anomaly(const std::vector<MountRuleParser::MountRule>& rules, MountR
 	return false;
 }
 
-static std::pair<bool, bool> anomaly(const std::unique_ptr<FileDescriptorInfo> fdi) {
+static std::pair<bool, bool> anomaly(const FileDescriptorInfo* fdi) {
 	if (fdi->is_sock) {
 		std::string socket_name;
 		if (fdi->GetSocketName(&socket_name)) {
@@ -534,7 +526,7 @@ private:
 					});
 					if (!fdi)
 						continue;
-					auto [canSanitize, shouldDetach] = anomaly(std::move(fdi));
+					auto [canSanitize, shouldDetach] = anomaly(fdi.get());
 					if (canSanitize) {
 						fdSanitizeList.emplace_back(std::move(fdi), shouldDetach);
 					}
@@ -685,7 +677,7 @@ static void NoRoot(int fd) {
 				if (redef && redef.is_open()) {
 					for (const auto &rule: rules)
 						redef << rule << std::endl;
-					f.close();
+					redef.close();
 				} else
 					LOGE("Unable to create `/data/adb/nohello/umount`");
 			}

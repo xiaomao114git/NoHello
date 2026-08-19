@@ -156,8 +156,8 @@ public:
 	[[nodiscard]] const MountOptions& getMountOptions() const { return mnt_opts; }
 
 private:
-	int mnt_id;
-	int mnt_parent_id;
+	int mnt_id = 0;
+	int mnt_parent_id = 0;
 	dev_t dev = 0;
 	std::string root;
 	std::string mnt_pnt;

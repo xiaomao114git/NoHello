@@ -11,6 +11,7 @@ HAS_ZYGISKSU=false
 HAS_REZYGISK=false
 
 rm -f /data/adb/nohello/no_clr_ptracemsg
+rm -f /data/adb/nohello/no_dirtyro_ar
 
 if [ -d "/data/adb/modules/zygisksu" ]; then
   if [ ! -f "/data/adb/modules/zygisksu/disable" ]; then
